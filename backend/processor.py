@@ -3,20 +3,7 @@ from shapely.geometry import Polygon
 
 
 def convert_dwg_to_dxf(input_path):
-    import subprocess
-    import os
-
-    oda_exe = r"C:\Program Files\ODA\ODAFileConverter 27.1.0\ODAFileConverter.exe"
-    input_folder = os.path.dirname(input_path)
-    output_folder = os.path.join(input_folder, "converted")
-    os.makedirs(output_folder, exist_ok=True)
-
-    subprocess.run([oda_exe, input_folder, output_folder, "ACAD2018", "DXF", "0", "1"])
-
-    filename = os.path.basename(input_path)
-    name = os.path.splitext(filename)[0]
-    return os.path.join(output_folder, name + ".dxf")
-
+    raise ValueError("DWG files are not supported on the cloud. Please upload a DXF file instead.")
 
 def extract_lines(doc):
     closed_polylines = []
