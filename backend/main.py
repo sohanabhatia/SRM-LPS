@@ -24,19 +24,20 @@ app.add_middleware(
 )
 
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DIST_DIR = os.path.join(BASE_DIR, "..", "frontend", "dist")
+DIST_DIR = os.path.abspath(DIST_DIR)
 
-UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs("exports", exist_ok=True)
-dist_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
-if os.path.exists(dist_path):
-    app.mount("/assets", StaticFiles(directory=os.path.join(dist_path, "assets")), name="assets")
+if os.path.exists(DIST_DIR):
+    app.mount("/assets", StaticFiles(directory=os.path.join(DIST_DIR, "assets")), name="assets")
 
 
 @app.get("/")
 async def serve_frontend():
-    dist_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
-    return FileResponse(os.path.join(dist_path, "index.html"))
+    index = os.path.join(DIST_DIR, "index.html")
+    if os.path.exists(index):
+        return FileResponse(index)
+    return {"error": f"index.html not found at {index}"}
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
