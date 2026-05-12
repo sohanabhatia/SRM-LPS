@@ -6,10 +6,13 @@ from fastapi.responses import Response
 import shutil
 import os
 from processor import process_dxf
-import subprocess
 import ezdxf
 from ezdxf import zoom
 import uuid
+
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs("exports", exist_ok=True)
 
 app = FastAPI(title="SRM University Automated Drawing API")
 
@@ -22,10 +25,6 @@ app.add_middleware(
     expose_headers=["*"],
     max_age=3600,
 )
-
-UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs("exports", exist_ok=True)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DIST_DIR = os.path.abspath(os.path.join(BASE_DIR, "dist"))
@@ -174,34 +173,17 @@ async def export_dwg(data: dict):
 
     uid     = uuid.uuid4().hex[:8]
     src_dir = os.path.join(os.path.abspath("exports"), f"src_{uid}")
-    dwg_dir = os.path.join(os.path.abspath("exports"), f"dwg_{uid}")
     os.makedirs(src_dir, exist_ok=True)
-    os.makedirs(dwg_dir, exist_ok=True)
 
     dxf_path = os.path.join(src_dir, "lps_output.dxf")
     doc.saveas(dxf_path)
 
-    oda_exe = r"C:\Program Files\ODA\ODAFileConverter 27.1.0\ODAFileConverter.exe"
-    proc = subprocess.run(
-        [oda_exe, src_dir, dwg_dir, "ACAD2018", "DWG", "0", "1"],
-        capture_output=True, text=True
+    # ODA File Converter not available on Railway (Linux) — serve DXF directly
+    # AutoCAD, BricsCAD, and DraftSight all open DXF natively
+    with open(dxf_path, "rb") as f:
+        content = f.read()
+    return Response(
+        content=content,
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": "attachment; filename=lps_output.dxf"}
     )
-
-    dwg_path = os.path.join(dwg_dir, "lps_output.dwg")
-
-    if os.path.exists(dwg_path):
-        with open(dwg_path, "rb") as f:
-            content = f.read()
-        return Response(
-            content=content,
-            media_type="application/octet-stream",
-            headers={"Content-Disposition": "attachment; filename=lps_output.dwg"}
-        )
-    else:
-        with open(dxf_path, "rb") as f:
-            content = f.read()
-        return Response(
-            content=content,
-            media_type="application/octet-stream",
-            headers={"Content-Disposition": "attachment; filename=lps_output.dxf"}
-        )
