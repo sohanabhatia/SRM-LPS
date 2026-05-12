@@ -1,3 +1,5 @@
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
@@ -22,22 +24,19 @@ app.add_middleware(
 )
 
 
-@app.options("/{rest_of_path:path}")
-async def preflight_handler(rest_of_path: str):
-    return Response(
-        status_code=200,
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "*",
-        },
-    )
-
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs("exports", exist_ok=True)
+dist_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+if os.path.exists(dist_path):
+    app.mount("/assets", StaticFiles(directory=os.path.join(dist_path, "assets")), name="assets")
 
+
+@app.get("/")
+async def serve_frontend():
+    dist_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+    return FileResponse(os.path.join(dist_path, "index.html"))
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
