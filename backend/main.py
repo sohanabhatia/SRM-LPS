@@ -23,10 +23,12 @@ app.add_middleware(
     max_age=3600,
 )
 
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs("exports", exist_ok=True)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DIST_DIR = os.path.join(BASE_DIR, "dist")
-DIST_DIR = os.path.abspath(DIST_DIR)
+DIST_DIR = os.path.abspath(os.path.join(BASE_DIR, "dist"))
 
 if os.path.exists(DIST_DIR):
     app.mount("/assets", StaticFiles(directory=os.path.join(DIST_DIR, "assets")), name="assets")
@@ -38,6 +40,7 @@ async def serve_frontend():
     if os.path.exists(index):
         return FileResponse(index)
     return {"error": f"index.html not found at {index}"}
+
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
@@ -58,6 +61,7 @@ async def process(file: UploadFile = File(...), lpsClass: str = Form("III")):
     result = process_dxf(file_path, lpsClass)
     return result
 
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}
@@ -74,7 +78,6 @@ async def export_dwg(data: dict):
     doc.header['$INSUNITS'] = 4
     msp = doc.modelspace()
 
-    # layers
     doc.layers.add("BUILDING",        color=7)
     doc.layers.add("BOUNDARY",        color=6)
     doc.layers.add("LPS_MESH",        color=1)
@@ -84,7 +87,6 @@ async def export_dwg(data: dict):
     doc.layers.add("EARTH_PITS",      color=2)
     doc.layers.add("LABELS",          color=7)
 
-    # 1. original building lines
     for p1, p2 in result["lines"]:
         msp.add_line(
             (float(p1[0]), float(p1[1])),
@@ -92,7 +94,6 @@ async def export_dwg(data: dict):
             dxfattribs={"layer": "BUILDING"}
         )
 
-    # 2. labels from original drawing
     for label in result.get("labels", []):
         try:
             msp.add_text(
@@ -106,7 +107,6 @@ async def export_dwg(data: dict):
         except Exception as ex:
             print(f"Label skip: {ex}")
 
-    # 3. LPS for every building
     buildings = result.get("buildings", [])
 
     if not buildings:
@@ -157,7 +157,6 @@ async def export_dwg(data: dict):
                 dxfattribs={"layer": "EARTH_PITS"}
             )
 
-    # extents
     all_x, all_y = [], []
     for p1, p2 in result["lines"]:
         all_x += [float(p1[0]), float(p2[0])]
@@ -181,15 +180,12 @@ async def export_dwg(data: dict):
 
     dxf_path = os.path.join(src_dir, "lps_output.dxf")
     doc.saveas(dxf_path)
-    print("DXF SAVED:", dxf_path, "| EXISTS:", os.path.exists(dxf_path))
 
     oda_exe = r"C:\Program Files\ODA\ODAFileConverter 27.1.0\ODAFileConverter.exe"
     proc = subprocess.run(
         [oda_exe, src_dir, dwg_dir, "ACAD2018", "DWG", "0", "1"],
         capture_output=True, text=True
     )
-    print("ODA stdout:", proc.stdout)
-    print("ODA stderr:", proc.stderr)
 
     dwg_path = os.path.join(dwg_dir, "lps_output.dwg")
 
