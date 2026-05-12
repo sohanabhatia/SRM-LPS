@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 import shutil
@@ -35,12 +35,14 @@ async def upload_file(file: UploadFile = File(...)):
 
 
 @app.post("/process")
-async def process(data: dict):
-    file_path = data.get("file_path")
-    lps_class = data.get("lpsClass")
-    result = process_dxf(file_path, lps_class)
+async def process(file: UploadFile = File(...), lpsClass: str = Form("III")):
+    contents = await file.read()
+    uid = uuid.uuid4().hex[:8]
+    file_path = os.path.join(UPLOAD_FOLDER, f"{uid}_{file.filename}")
+    with open(file_path, "wb") as f:
+        f.write(contents)
+    result = process_dxf(file_path, lpsClass)
     return result
-
 
 @app.get("/health")
 async def health():

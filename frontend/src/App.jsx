@@ -44,7 +44,7 @@ export default function App() {
       setFilePath(res.file_path);
       setLpsClassState(lpsClass);
       setStatus("processing");
-      const processed = await processFile(res.file_path, lpsClass);
+      const processed = await processFile(res.file_path, lpsClass, file);
       setData(processed);
       setEditData(JSON.parse(JSON.stringify(processed)));
       setHistory([]);
