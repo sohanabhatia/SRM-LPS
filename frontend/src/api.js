@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:8000";
+const BASE_URL = "https://srm-lps-production.up.railway.app";
 
 export async function uploadFile(file) {
   const formData = new FormData();
