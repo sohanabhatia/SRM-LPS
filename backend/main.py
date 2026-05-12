@@ -25,7 +25,7 @@ app.add_middleware(
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DIST_DIR = os.path.join(BASE_DIR, "..", "frontend", "dist")
+DIST_DIR = os.path.join(BASE_DIR, "dist")
 DIST_DIR = os.path.abspath(DIST_DIR)
 
 if os.path.exists(DIST_DIR):
